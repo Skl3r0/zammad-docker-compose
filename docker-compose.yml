@@ -90,9 +90,9 @@ services:
 
     command: ["zammad-nginx"]
     expose:
-      - "${NGINX_PORT:-8080}"
+      - "${NGINX_PORT:-80}"
     ports:
-      - "${NGINX_EXPOSE_PORT:-8080}:${NGINX_PORT:-8080}"
+      - "${NGINX_EXPOSE_PORT:-80}:${NGINX_PORT:-80}"
     depends_on:
       - zammad-railsserver
 
