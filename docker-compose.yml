@@ -38,8 +38,6 @@ x-shared:
       ZAMMAD_PROCESS_DELAYED_JOBS_WORKERS:
     image: ${IMAGE_REPO:-ghcr.io/zammad/zammad}:${VERSION:-6.3.1-95}
     restart: ${RESTART:-always}
-    networks:
-      - zammad
     volumes:
       - zammad-storage:/opt/zammad/storage
     depends_on:
@@ -52,8 +50,6 @@ services:
   zammad-backup:
     <<: *zammad-service
     command: ["zammad-backup"]
-    networks:
-      - zammad
     volumes:
       - zammad-backup:/var/tmp/zammad
       - zammad-storage:/opt/zammad/storage:ro
@@ -62,8 +58,6 @@ services:
   zammad-elasticsearch:
     image: bitnami/elasticsearch:${ELASTICSEARCH_VERSION:-8.14.3}
     restart: ${RESTART:-always}
-    networks:
-      - zammad
     volumes:
       - elasticsearch-data:/bitnami/elasticsearch/data
 
@@ -73,19 +67,27 @@ services:
     depends_on:
       - zammad-postgresql
     restart: on-failure
-    networks:
-      - zammad
     user: 0:0
 
   zammad-memcached:
     command: memcached -m 256M
     image: memcached:${MEMCACHE_VERSION:-1.6.29-alpine}
     restart: ${RESTART:-always}
-    networks:
-      - zammad
 
   zammad-nginx:
     <<: *zammad-service
+    environment:
+      - VIRTUAL_HOST=zammad.dev.network.as212655.net
+      - NGINX_SERVER_SCHEME=https
+    networks:
+      - default
+      - youfibre_external
+    deploy:
+      labels:
+        caddy_0: zammad.dev.network.as212655.net
+        caddy_0.reverse_proxy: "{{upstreams 80}}"
+        caddy_0.tls.dns: route53
+
     command: ["zammad-nginx"]
     expose:
       - "${NGINX_PORT:-8080}"
@@ -93,14 +95,6 @@ services:
       - "${NGINX_EXPOSE_PORT:-8080}:${NGINX_PORT:-8080}"
     depends_on:
       - zammad-railsserver
-    networks:
-      - youfibre_external
-      - zammad
-    deploy:
-      labels:
-        caddy_0: zammad.dev.network.as212655.net
-        caddy_0.reverse_proxy: "{{upstreams 80}}"
-        caddy_0.tls.dns: route53  
 
   zammad-postgresql:
     environment:
@@ -109,29 +103,21 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASS:-zammad}
     image: postgres:${POSTGRES_VERSION:-15.7-alpine}
     restart: ${RESTART:-always}
-    networks:
-      - zammad
     volumes:
       - postgresql-data:/var/lib/postgresql/data
 
   zammad-railsserver:
     <<: *zammad-service
     command: ["zammad-railsserver"]
-    networks:
-      - zammad
 
   zammad-redis:
     image: redis:${REDIS_VERSION:-7.2.5-alpine}
     restart: ${RESTART:-always}
-    networks:
-      - zammad
     volumes:
       - redis-data:/data
 
   zammad-scheduler:
     <<: *zammad-service
-    networks:
-      - zammad
     command: ["zammad-scheduler"]
 
   zammad-websocket:
@@ -153,5 +139,4 @@ volumes:
 networks:
   youfibre_external:
     driver: overlay # Use when deploying over Docker Swarm
-  zammad:
-
+    external: true
