@@ -76,11 +76,6 @@ services:
 
   zammad-nginx:
     <<: *zammad-service
-    environment:
-      - VIRTUAL_HOST=zammad.dev.network.as212655.net
-      - NGINX_SERVER_SCHEME=https
-    networks:
-      - youfibre_external
     command: ["zammad-nginx"]
     expose:
       - "${NGINX_PORT:-8080}"
@@ -88,12 +83,6 @@ services:
       - "${NGINX_EXPOSE_PORT:-8080}:${NGINX_PORT:-8080}"
     depends_on:
       - zammad-railsserver
-    deploy:
-      labels:
-        caddy: zammad.dev.network.as212655.net
-        caddy.reverse_proxy: "{{upstreams 80}}"
-        caddy.tls.dns: route53
-  
 
   zammad-postgresql:
     environment:
@@ -134,8 +123,3 @@ volumes:
     driver: local
   zammad-storage:
     driver: local
-
-networks:
-  youfibre_external:
-    driver: overlay # Use when deploying over Docker Swarm
-    external: true
